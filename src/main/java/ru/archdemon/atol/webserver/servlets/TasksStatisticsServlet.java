@@ -41,7 +41,7 @@ public class TasksStatisticsServlet extends HttpServlet {
             logger.info(String.format("%d %s", resp.getStatus(), response.toJSONString()));
         } catch (DBException e) {
             logger.error(e.getMessage(), e);
-            resp.sendError(500, e.getMessage());
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 }

@@ -45,13 +45,13 @@ public class JsonTaskListServlet extends HttpServlet {
         try {
             json = (JSONObject) JSONValue.parseWithException(body);
             if (!json.containsKey("uuid") || !json.containsKey("request")) {
-                resp.sendError(400, "\"uuid\" and / or \"request\" not found");
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "\"uuid\" and / or \"request\" not found");
                 return;
             }
             requestJson = json.get("request").toString();
         } catch (ParseException e) {
             logger.error(e.getMessage(), subTasks);
-            resp.sendError(400, e.getMessage());
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
 
             return;
         }
@@ -73,7 +73,7 @@ public class JsonTaskListServlet extends HttpServlet {
         if (fiscalTasksCount > 1) {
             String error = String.format("Too many fiscal sub-tasks - %d", fiscalTasksCount);
             logger.error(error);
-            resp.sendError(400, error);
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, error);
             return;
         }
 
@@ -88,10 +88,10 @@ public class JsonTaskListServlet extends HttpServlet {
             DBInstance.db.addTask(task);
         } catch (NotUniqueKeyException e) {
             logger.error(e.getMessage(), e);
-            resp.sendError(409, e.getMessage());
+            resp.sendError(HttpServletResponse.SC_CONFLICT, e.getMessage());
         } catch (DBException e) {
             logger.error(e.getMessage(), e);
-            resp.sendError(500, e.getMessage());
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
         }
         resp.setStatus(201);
     }

@@ -35,20 +35,20 @@ public class JsonTaskServlet extends HttpServlet {
             subTasks = DBInstance.db.getTaskStatus(uuid);
         } catch (NotUniqueKeyException e) {
             logger.error(e.getMessage(), e);
-            resp.sendError(409, e.getMessage());
+            resp.sendError(HttpServletResponse.SC_CONFLICT, e.getMessage());
             return;
         } catch (DBException e) {
             logger.error(e.getMessage(), e);
-            resp.sendError(500, e.getMessage());
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
             return;
         } catch (ArrayIndexOutOfBoundsException e) {
             logger.error(e.getMessage(), e);
-            resp.sendError(404, "No UUID");
+            resp.sendError(HttpServletResponse.SC_NOT_FOUND, "No UUID");
 
             return;
         }
         if (subTasks == null) {
-            resp.sendError(404);
+            resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 
             return;
         }
@@ -86,7 +86,7 @@ public class JsonTaskServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        resp.sendError(405);
+        resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
     }
 
     @Override
@@ -103,20 +103,20 @@ public class JsonTaskServlet extends HttpServlet {
             task = DBInstance.db.getTask(uuid);
         } catch (NotUniqueKeyException e) {
             logger.error(e.getMessage(), e);
-            resp.sendError(409, e.getMessage());
+            resp.sendError(HttpServletResponse.SC_CONFLICT, e.getMessage());
             return;
         } catch (DBException e) {
             logger.error(e.getMessage(), e);
-            resp.sendError(500, e.getMessage());
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
             return;
         } catch (ArrayIndexOutOfBoundsException e) {
             logger.error(e.getMessage(), e);
-            resp.sendError(404, "No UUID");
+            resp.sendError(HttpServletResponse.SC_NOT_FOUND, "No UUID");
             return;
         }
 
         if (subTasks == null || task == null) {
-            resp.sendError(404);
+            resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 
             return;
         }
@@ -124,13 +124,13 @@ public class JsonTaskServlet extends HttpServlet {
         logger.info(String.format("%s %s", req.getMethod(), req.getRequestURI()));
 
         if (task.isReady()) {
-            resp.sendError(405, "Task done or canceled");
+            resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Task done or canceled");
             return;
         }
 
         for (int i = 0; i < subTasks.size(); i++) {
             if (((SubtaskStatus) subTasks.get(i)).getStatus() != 0) {
-                resp.sendError(405, "Task in progress");
+                resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Task in progress");
                 return;
             }
         }
