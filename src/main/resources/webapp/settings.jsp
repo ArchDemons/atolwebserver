@@ -1,6 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ page import="ru.atol.drivers10.webserver.settings.SelectItem" %>
+<%@ page import="ru.archdemon.atol.webserver.settings.SelectItem" %>
 <%@ page import="java.util.List" %>
 
 <html>
@@ -17,9 +17,7 @@
                 <div class="col-md-8">
                     <div class="form-group">
                         <form method="POST" action="settings">
-
                             <div class="panel-group" id="accordion">
-
                                 <div class="panel panel-default">
                                     <div class="panel-heading">
                                         <h4 class="panel-title">
@@ -32,7 +30,6 @@
                                         </div>
                                     </div>
                                 </div>
-
                                 <div class="panel panel-default">
                                     <div class="panel-heading">
                                         <h4 class="panel-title">
@@ -49,7 +46,6 @@
                                                 </c:forEach>
                                                 </select>
                                             </div>
-
                                             <div class="form-group">
                                                 <label for="usbDevicePaths">USB:</label>
                                                 <select id="usbDevicePaths" name="usbDevicePaths" class="form-control custom">
@@ -58,7 +54,6 @@
                                                 </c:forEach>
                                                 </select>
                                             </div>
-
                                             <div class="form-group">
                                                 <label for="coms">COM-порт:</label>
                                                 <select id="coms" name="coms" class="form-control custom">
@@ -67,7 +62,6 @@
                                                 </c:forEach>
                                                 </select>
                                             </div>
-
                                             <div class="form-group">
                                                 <label for="baudrates">Скорость:</label>
                                                 <select id="baudrates" name="baudrates" class="form-control custom">
@@ -76,7 +70,6 @@
                                                 </c:forEach>
                                                 </select>
                                             </div>
-
                                             <label for="tcpAddress">IP-адрес</label>
                                             <div class="row">
                                                 <div class="form-group col-xs-6">
@@ -86,7 +79,6 @@
                                                     <input type="text" id="tcpPort" name="tcpPort" value="${tcpPort}" class="form-control">
                                                 </div>
                                             </div>
-
                                             <div class="form-group">
                                                 <label for="ofdChannels">Канал до ОФД:</label>
                                                 <select id="ofdChannels" name="ofdChannels" class="form-control custom">
@@ -95,15 +87,12 @@
                                                 </c:forEach>
                                                 </select>
                                             </div>
-
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
                             <input type="submit" value="Сохранить" class="btn btn-primary">
                         </form>
-
                     </div>
                 </div>
             </div>

@@ -185,7 +185,7 @@ public class DriverWorker extends Thread {
 
                     if (!wasError) {
                         this.fptr.setParam(IFptr.LIBFPTR_PARAM_JSON_DATA, subtask.toJSONString());
-                        if (this.fptr.processJson() < 0) {
+                        if (this.fptr.processJson() != IFptr.LIBFPTR_OK) {
 
                             if (isNeedBlock(this.fptr.errorCode()) && lastDocumentNumber != -1L) {
                                 try {

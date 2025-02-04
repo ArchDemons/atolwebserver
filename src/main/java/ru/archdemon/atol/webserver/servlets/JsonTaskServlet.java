@@ -56,10 +56,13 @@ public class JsonTaskServlet extends HttpServlet {
 
         JSONArray results = new JSONArray();
         for (SubtaskStatus s : subTasks) {
+            JSONObject error = new JSONObject();
+            error.put("code", s.getErrorCode());
+            error.put("description", s.getErrorDescription());
+
             JSONObject o = new JSONObject();
             o.put("status", Utils.getStatusString(s.getStatus()));
-            o.put("errorCode", s.getErrorCode());
-            o.put("errorDescription", s.getErrorDescription());
+            o.put("error", error);
 
             JSONParser parser = new JSONParser();
             JSONObject subTaskResult = null;

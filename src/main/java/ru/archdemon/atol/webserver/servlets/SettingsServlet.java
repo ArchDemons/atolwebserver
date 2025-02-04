@@ -31,9 +31,10 @@ public class SettingsServlet extends HttpServlet {
         JSONArray mapping = (JSONArray) parser.parse(fptr.getParamString(IFptr.LIBFPTR_PARAM_MAPPING_VALUE));
 
         for (Object o : mapping) {
-            select.add(new SelectItem(selectKey + "_" + ((JSONObject) o).get("key"), (String) ((JSONObject) o)
-                    .get("description"), ((JSONObject) o)
-                    .get("key").equals(selected)));
+            select.add(new SelectItem(
+                    ((JSONObject) o).get("key").toString(),
+                    ((JSONObject) o).get("description").toString(),
+                    ((JSONObject) o).get("key").equals(selected)));
         }
 
         return select;
@@ -60,16 +61,17 @@ public class SettingsServlet extends HttpServlet {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             return;
         }
-        Fptr fptr1 = new Fptr();
+
+        Fptr fptr = new Fptr();
 
         try {
-            req.setAttribute("channels", getDeviceSelect(fptr1, "Port", device));
-            req.setAttribute("usbDevicePaths", getDeviceSelect(fptr1, "UsbDevicePath", device));
-            req.setAttribute("coms", getDeviceSelect(fptr1, "ComFile", device));
-            req.setAttribute("baudrates", getDeviceSelect(fptr1, "BaudRate", device));
-            req.setAttribute("tcpAddress", getDeviceString(fptr1, "IPAddress", device));
-            req.setAttribute("tcpPort", getDeviceString(fptr1, "IPPort", device));
-            req.setAttribute("ofdChannels", getDeviceSelect(fptr1, "OfdChannel", device));
+            req.setAttribute("channels", getDeviceSelect(fptr, "Port", device));
+            req.setAttribute("usbDevicePaths", getDeviceSelect(fptr, "UsbDevicePath", device));
+            req.setAttribute("coms", getDeviceSelect(fptr, "ComFile", device));
+            req.setAttribute("baudrates", getDeviceSelect(fptr, "BaudRate", device));
+            req.setAttribute("tcpAddress", getDeviceString(fptr, "IPAddress", device));
+            req.setAttribute("tcpPort", getDeviceString(fptr, "IPPort", device));
+            req.setAttribute("ofdChannels", getDeviceSelect(fptr, "OfdChannel", device));
 
             req.setAttribute("isActive", ((Boolean) common.get("is_active")));
         } catch (ParseException e) {
@@ -94,21 +96,21 @@ public class SettingsServlet extends HttpServlet {
         JSONObject deviceSettings = (JSONObject) settings.get("devices");
         JSONObject mainDeviceSettings = (JSONObject) deviceSettings.get("main");
 
-        String[] channel = req.getParameter("channels").split("_");
-        String[] usbDevicePath = req.getParameter("usbDevicePaths").split("_");
-        String[] com = req.getParameter("coms").split("_");
-        String[] baudrate = req.getParameter("baudrates").split("_");
+        String channel = req.getParameter("channels");
+        String usbDevicePath = req.getParameter("usbDevicePaths");
+        String com = req.getParameter("coms");
+        String baudrate = req.getParameter("baudrates");
         String tcpAddress = req.getParameter("tcpAddress");
         String tcpPort = req.getParameter("tcpPort");
-        String[] ofdChannel = req.getParameter("ofdChannels").split("_");
+        String ofdChannel = req.getParameter("ofdChannels");
 
         commonSettings.put("is_active", (req.getParameter("isActive") != null));
 
-        mainDeviceSettings.put("Port", channel[1]);
-        mainDeviceSettings.put("UsbDevicePath", usbDevicePath[1]);
-        mainDeviceSettings.put("ComFile", com[1]);
-        mainDeviceSettings.put("BaudRate", baudrate[1]);
-        mainDeviceSettings.put("OfdChannel", ofdChannel[1]);
+        mainDeviceSettings.put("Port", channel);
+        mainDeviceSettings.put("UsbDevicePath", usbDevicePath);
+        mainDeviceSettings.put("ComFile", com);
+        mainDeviceSettings.put("BaudRate", baudrate);
+        mainDeviceSettings.put("OfdChannel", ofdChannel);
         mainDeviceSettings.put("IPAddress", tcpAddress);
         mainDeviceSettings.put("IPPort", tcpPort);
 

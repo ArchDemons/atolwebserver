@@ -93,6 +93,6 @@ public class JsonTaskListServlet extends HttpServlet {
             logger.error(e.getMessage(), e);
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
         }
-        resp.setStatus(201);
+        resp.setStatus(HttpServletResponse.SC_CREATED);
     }
 }
