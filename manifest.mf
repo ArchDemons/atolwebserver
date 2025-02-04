@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Implementation-Title: АТОЛ. Web-сервер драйвера ККТ v.10
+Implementation-Version: 10.6.3.0
+X-COMMENT: Main-Class will be added automatically by build
