@@ -1,7 +1,6 @@
 package ru.archdemon.atol.webserver.db;
 
-public class NotUniqueKeyException
-        extends DBException {
+public class NotUniqueKeyException extends DBException {
 
     public NotUniqueKeyException() {
     }

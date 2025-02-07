@@ -11,9 +11,9 @@ import org.json.simple.JSONObject;
 import ru.archdemon.atol.webserver.db.DBException;
 import ru.archdemon.atol.webserver.db.DBInstance;
 import ru.archdemon.atol.webserver.entities.BlockRecord;
-import ru.archdemon.atol.webserver.entities.TasksStat;
+import ru.archdemon.atol.webserver.entities.RequestsQueueStatus;
 
-public class TasksStatisticsServlet extends HttpServlet {
+public class RequestsQueueStatusServlet extends HttpServlet {
 
     private static final Logger logger = LogManager.getLogger(JsonTaskServlet.class);
 
@@ -23,16 +23,19 @@ public class TasksStatisticsServlet extends HttpServlet {
 
         logger.info(String.format("%s %s", req.getMethod(), req.getRequestURI()));
 
+        String deviceId = req.getParameterValues("deviceID")[0];
+
         try {
-            TasksStat stat = DBInstance.db.getTasksStat();
-            BlockRecord block = DBInstance.db.getBlockState();
+            RequestsQueueStatus stat = DBInstance.db.getTasksStat(deviceId);
+            BlockRecord block = DBInstance.db.getBlockState(deviceId);
 
             JSONObject response = new JSONObject();
-            response.put("ready_count", stat.getTasksReadyCount());
-            response.put("not_ready_count", stat.getTasksNotReadyCount());
-            response.put("canceled_count", stat.getTasksCanceledCount());
-            response.put("is_blocked", !block.getUuid().isEmpty());
-            response.put("block_request_uuid", block.getUuid());
+            response.put("number", stat.getNumber());
+            response.put("canceled", stat.getCanceled());
+            response.put("ready", stat.getReady());
+            response.put("isBlocked", block != null);
+            response.put("blockReason", block != null ? getBlockReason(block) : "");
+            response.put("blockedUUID", block != null ? block.getUuid() : "");
 
             resp.setContentType("application/json");
             resp.setCharacterEncoding("UTF-8");
@@ -43,5 +46,17 @@ public class TasksStatisticsServlet extends HttpServlet {
             logger.error(e.getMessage(), e);
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
         }
+    }
+
+    private String getBlockReason(BlockRecord block) {
+        if (block.isConnectionError()) {
+            return "connectionError";
+        } else if (block.isPaperError()) {
+            return "paperError";
+        } else if (block.isFnError()) {
+            return "fnError";
+        }
+
+        return "";
     }
 }

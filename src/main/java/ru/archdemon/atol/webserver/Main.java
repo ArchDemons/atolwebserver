@@ -1,12 +1,14 @@
 package ru.archdemon.atol.webserver;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Properties;
 import javax.servlet.ServletException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,7 +16,6 @@ import org.apache.tomcat.JarScanner;
 import org.apache.tomcat.util.scan.StandardJarScanner;
 import org.eclipse.jetty.annotations.AnnotationConfiguration;
 import org.eclipse.jetty.apache.jsp.JettyJasperInitializer;
-import org.eclipse.jetty.jsp.JettyJspServlet;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -30,7 +31,6 @@ import org.eclipse.jetty.webapp.JettyWebXmlConfiguration;
 import org.json.simple.JSONObject;
 import ru.archdemon.atol.webserver.db.DBInstance;
 import ru.archdemon.atol.webserver.servlets.*;
-import ru.archdemon.atol.webserver.settings.Settings;
 import ru.archdemon.atol.webserver.workers.DriverWorker;
 
 public class Main {
@@ -114,8 +114,12 @@ public class Main {
         logger.info("Запуск сервера");
         server = new Server();
 
+        String appConfigPath = Thread.currentThread().getContextClassLoader().getResource("application.properties").getPath();
+        Properties properties = new Properties();
+        properties.load(new FileInputStream(appConfigPath));
+
         ServerConnector connector = new ServerConnector(server);
-        connector.setPort((int) ((Long) ((JSONObject) Settings.load().get("web")).get("port")).longValue());
+        connector.setPort(Integer.parseInt(properties.getProperty("web.port")));
         server.addConnector(connector);
 
         Configuration.ClassList classlist = Configuration.ClassList.setServerDefault(server);
@@ -133,16 +137,20 @@ public class Main {
 
         enableEmbeddedJspSupport(servletContextHandler);
 
-        servletContextHandler.addServlet(SettingsServlet.class, "/settings");
-        servletContextHandler.addServlet(AboutServlet.class, "/about");
-        servletContextHandler.addServlet(JsonTaskListServlet.class, "/requests");
-        servletContextHandler.addServlet(JsonTaskServlet.class, "/requests/*");
-        servletContextHandler.addServlet(TasksStatisticsServlet.class, "/stat/requests");
+        servletContextHandler.addServlet(UtilServlet.class, "/api/v2/utils/*");
+        servletContextHandler.addServlet(UtilServlet.class, "/api/v2/operations/*");
+        servletContextHandler.addServlet(ServerInfoServlet.class, "/api/v2/serverInfo");
+        servletContextHandler.addServlet(DeviceServlet.class, "/api/v2/devices");
+        servletContextHandler.addServlet(DeviceServlet.class, "/api/v2/devices/*");
+        servletContextHandler.addServlet(JsonTaskServlet.class, "/api/v2/requests");
+        servletContextHandler.addServlet(JsonTaskServlet.class, "/api/v2/requests/*");
+        servletContextHandler.addServlet(RequestsQueueStatusServlet.class, "/api/v2/getRequestsQueueStatus");
+        servletContextHandler.addServlet(SettingServlet.class, "/api/v2/settings");
         servletContextHandler.addFilter(filterHolder, "/*", null);
 
         ServletHolder holderDefault = new ServletHolder("default", DefaultServlet.class);
         holderDefault.setInitParameter("resourceBase", baseUri.toASCIIString());
-        holderDefault.setInitParameter("dirAllowed", "true");
+        holderDefault.setInitParameter("dirAllowed", "false");
         servletContextHandler.addServlet(holderDefault, "/");
 
         HandlerList handlers = new HandlerList();
@@ -152,12 +160,10 @@ public class Main {
         server.start();
         logger.info("OK");
 
-        if (((Boolean) ((JSONObject) Settings.load().get("common")).get("is_active"))) {
-            logger.info("Запуск потока работы с ККТ...");
-            driverWorker = new DriverWorker();
-            driverWorker.start();
-            logger.info("OK");
-        }
+        logger.info("Запуск потока работы с ККТ...");
+        driverWorker = new DriverWorker();
+        driverWorker.start();
+        logger.info("OK");
 
         server.join();
     }
@@ -166,8 +172,7 @@ public class Main {
         File tempDir = new File(System.getProperty("java.io.tmpdir"));
         File scratchDir = new File(tempDir.toString(), "atol-web-server-tmp");
 
-        if (!scratchDir.exists()
-                && !scratchDir.mkdirs()) {
+        if (!scratchDir.exists() && !scratchDir.mkdirs()) {
             throw new IOException("Unable to create scratch directory: " + scratchDir);
         }
 
@@ -177,17 +182,6 @@ public class Main {
         servletContextHandler.setClassLoader(jspClassLoader);
 
         servletContextHandler.addBean(new JspStarter(servletContextHandler));
-
-        ServletHolder holderJsp = new ServletHolder("jsp", JettyJspServlet.class);
-        holderJsp.setInitOrder(0);
-        holderJsp.setInitParameter("logVerbosityLevel", "DEBUG");
-        holderJsp.setInitParameter("fork", "false");
-        holderJsp.setInitParameter("xpoweredBy", "false");
-        holderJsp.setInitParameter("compilerTargetVM", "11");
-        holderJsp.setInitParameter("compilerSourceVM", "11");
-        holderJsp.setInitParameter("keepgenerated", "true");
-        holderJsp.setInitParameter("classpath", System.getProperty("java.class.path"));
-        servletContextHandler.addServlet(holderJsp, "*.jsp");
     }
 
     private static URI getWebRootResourceUri() throws FileNotFoundException, URISyntaxException {

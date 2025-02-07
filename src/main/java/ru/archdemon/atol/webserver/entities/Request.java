@@ -1,54 +1,30 @@
 package ru.archdemon.atol.webserver.entities;
 
 import java.util.Date;
+import lombok.Data;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-public class Task {
+@Data
+public class Request {
 
+    private Long id;
     private String uuid;
+    private String deviceId;
     private String data;
-    private Date timestamp;
+    private Date createdTime;
+    private Date finishedTime;
     private boolean isReady;
     private boolean isCanceled;
-
-    public String getUuid() {
-        return this.uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
-    public String getData() {
-        return this.data;
-    }
-
-    public void setData(String data) {
-        this.data = data;
-    }
-
-    public Date getTimestamp() {
-        return this.timestamp;
-    }
-
-    public void setTimestamp(Date timestamp) {
-        this.timestamp = timestamp;
-    }
+    private boolean inProgress;
+    private String callbackResultUrl;
+    private boolean callbackResultComplete;
 
     public boolean isList() {
         String trimmed = this.data.trim();
         return (!trimmed.isEmpty() && trimmed.charAt(0) == '[');
-    }
-
-    public boolean isReady() {
-        return this.isReady;
-    }
-
-    public void setReady(boolean ready) {
-        this.isReady = ready;
     }
 
     public int getSubTaskCount() {
@@ -83,11 +59,4 @@ public class Task {
         return a;
     }
 
-    public boolean isCanceled() {
-        return this.isCanceled;
-    }
-
-    public void setCanceled(boolean canceled) {
-        this.isCanceled = canceled;
-    }
 }

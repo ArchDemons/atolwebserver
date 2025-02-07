@@ -1,6 +1,10 @@
 package ru.archdemon.atol.webserver.servlets;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -10,15 +14,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
+import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
 import ru.archdemon.atol.webserver.Consts;
 import ru.archdemon.atol.webserver.Utils;
 import ru.archdemon.atol.webserver.db.DBException;
 import ru.archdemon.atol.webserver.db.DBInstance;
 import ru.archdemon.atol.webserver.db.NotUniqueKeyException;
-import ru.archdemon.atol.webserver.entities.SubtaskStatus;
-import ru.archdemon.atol.webserver.entities.Task;
+import ru.archdemon.atol.webserver.entities.BlockRecord;
+import ru.archdemon.atol.webserver.entities.Result;
+import ru.archdemon.atol.webserver.entities.Request;
 
 public class JsonTaskServlet extends HttpServlet {
 
@@ -28,11 +33,12 @@ public class JsonTaskServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        List<SubtaskStatus> subTasks;
+        List<Result> subTasks;
 
         try {
             String uuid = req.getPathInfo().split("/")[1];
-            subTasks = DBInstance.db.getTaskStatus(uuid);
+            Request task = DBInstance.db.getTask(uuid);
+            subTasks = DBInstance.db.getTaskStatus(task.getId());
         } catch (NotUniqueKeyException e) {
             logger.error(e.getMessage(), e);
             resp.sendError(HttpServletResponse.SC_CONFLICT, e.getMessage());
@@ -44,35 +50,19 @@ public class JsonTaskServlet extends HttpServlet {
         } catch (ArrayIndexOutOfBoundsException e) {
             logger.error(e.getMessage(), e);
             resp.sendError(HttpServletResponse.SC_NOT_FOUND, "No UUID");
-
             return;
         }
+
         if (subTasks == null) {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-
             return;
         }
+
         logger.info(String.format("%s %s", req.getMethod(), req.getRequestURI()));
 
         JSONArray results = new JSONArray();
-        for (SubtaskStatus s : subTasks) {
-            JSONObject error = new JSONObject();
-            error.put("code", s.getErrorCode());
-            error.put("description", s.getErrorDescription());
-
-            JSONObject o = new JSONObject();
-            o.put("status", Utils.getStatusString(s.getStatus()));
-            o.put("error", error);
-
-            JSONParser parser = new JSONParser();
-            JSONObject subTaskResult = null;
-            try {
-                subTaskResult = (JSONObject) parser.parse(s.getResultData());
-            } catch (ParseException parseException) {
-            }
-
-            o.put("result", subTaskResult);
-            results.add(o);
+        for (Result s : subTasks) {
+            results.add(s.toJson());
         }
 
         JSONObject response = new JSONObject();
@@ -89,7 +79,80 @@ public class JsonTaskServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+        if (req.getPathInfo() != null) {
+            resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+            return;
+        }
+
+        String deviceId = req.getParameterValues("deviceID")[0];
+
+        JSONObject json;
+        String body = Utils.readFromReader(new BufferedReader(new InputStreamReader(req.getInputStream(), StandardCharsets.UTF_8)));
+        try {
+            json = (JSONObject) JSONValue.parseWithException(body);
+            if (!json.containsKey("uuid") || !json.containsKey("request")) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "'uuid' and / or 'request' not found");
+                return;
+            }
+        } catch (ParseException e) {
+            logger.error(e.getMessage(), body);
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+            return;
+        }
+
+        JSONArray subTasks;
+        if (json.get("request") instanceof JSONArray) {
+            subTasks = (JSONArray) json.get("request");
+        } else {
+            subTasks = new JSONArray();
+            subTasks.add(json.get("request"));
+        }
+
+        int fiscalTasksCount = 0;
+        for (int i = 0; i < subTasks.size(); i++) {
+            JSONObject subtask = (JSONObject) subTasks.get(i);
+            if (subtask.containsKey("type") && Utils.isFiscalOperation((String) subtask.get("type"))) {
+                fiscalTasksCount++;
+            }
+        }
+
+        if (fiscalTasksCount > 1) {
+            String error = String.format("Too many fiscal sub-tasks - %d", fiscalTasksCount);
+            logger.error(error);
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, error);
+            return;
+        }
+
+        Request task = new Request();
+        task.setDeviceId(deviceId);
+        task.setUuid(json.get("uuid").toString());
+        task.setData(json.get("request").toString());
+        task.setCreatedTime(new Date());
+
+        logger.info(String.format("%s %s [%s]", req.getMethod(), req.getRequestURI(), body));
+
+        try {
+            DBInstance.db.addTask(task);
+            BlockRecord block = DBInstance.db.getBlockState(deviceId);
+
+            JSONObject response = new JSONObject();
+            response.put("number", 0);
+            response.put("uuid", task.getUuid());
+            response.put("isBlocked", block != null);
+            response.put("blockedUUID", block != null ? block.getUuid() : "");
+
+            resp.setContentType("application/json");
+            resp.setCharacterEncoding("UTF-8");
+            resp.getWriter().write(response.toJSONString());
+            resp.setStatus(HttpServletResponse.SC_CREATED);
+
+        } catch (NotUniqueKeyException e) {
+            logger.error(e.getMessage(), e);
+            resp.sendError(HttpServletResponse.SC_CONFLICT, e.getMessage());
+        } catch (DBException e) {
+            logger.error(e.getMessage(), e);
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+        }
     }
 
     @Override
@@ -97,13 +160,17 @@ public class JsonTaskServlet extends HttpServlet {
             throws ServletException, IOException {
 
         String uuid;
-        Task task;
-        List<SubtaskStatus> subTasks;
+        Request task;
+        List<Result> subTasks;
 
         try {
             uuid = req.getPathInfo().split("/")[1];
-            subTasks = DBInstance.db.getTaskStatus(uuid);
             task = DBInstance.db.getTask(uuid);
+            if (task == null) {
+                resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
+            subTasks = DBInstance.db.getTaskStatus(task.getId());
         } catch (NotUniqueKeyException e) {
             logger.error(e.getMessage(), e);
             resp.sendError(HttpServletResponse.SC_CONFLICT, e.getMessage());
@@ -118,12 +185,6 @@ public class JsonTaskServlet extends HttpServlet {
             return;
         }
 
-        if (subTasks == null || task == null) {
-            resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-
-            return;
-        }
-
         logger.info(String.format("%s %s", req.getMethod(), req.getRequestURI()));
 
         if (task.isReady()) {
@@ -132,7 +193,7 @@ public class JsonTaskServlet extends HttpServlet {
         }
 
         for (int i = 0; i < subTasks.size(); i++) {
-            if (((SubtaskStatus) subTasks.get(i)).getStatus() != 0) {
+            if (((Result) subTasks.get(i)).getStatus() != Consts.STATUS_WAIT) {
                 resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Task in progress");
                 return;
             }
@@ -144,12 +205,10 @@ public class JsonTaskServlet extends HttpServlet {
             logger.error(e.getMessage(), e);
         }
 
-        SubtaskStatus status = new SubtaskStatus();
-        status.setStatus(Consts.STATUS_CANCELED);
-
-        for (int i = 0; i < subTasks.size(); i++) {
+        for (Result status : subTasks) {
             try {
-                DBInstance.db.updateSubTaskStatus(uuid, i, status);
+                status.setStatus(Consts.STATUS_CANCELED);
+                DBInstance.db.updateSubTaskStatus(status);
             } catch (DBException e) {
                 logger.error(e.getMessage(), e);
             }
