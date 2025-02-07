@@ -23,6 +23,8 @@ public class ServerInfoServlet extends HttpServlet {
         response.put("os", System.getProperty("os.name"));
         response.put("serverVersion", (new Version()).getVersion());
 
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
         resp.getWriter().write(response.toJSONString());
     }
 }

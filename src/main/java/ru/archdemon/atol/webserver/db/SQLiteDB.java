@@ -430,8 +430,8 @@ public class SQLiteDB implements DBInterface {
             PreparedStatement pstmt = connection.prepareStatement(
                     "UPDATE devices SET name = ?, is_active = ?, is_default = ?, model = ?, user_password = ?"
                     + ", access_password = ?, port = ?, com = ?, usb = ?, baud_rate = ?"
-                    + ", ip_addr = ?, mac = ?, ofd_channel = ?, use_global_sp = ?, scripts_path = ?"
-                    + ", use_global_icds = ?, invert_cd_status = ?, use_global_hl = ?"
+                    + ", ip_addr = ?, ip_port = ?, mac = ?, ofd_channel = ?, use_global_sp = ?,"
+                    + " scripts_path = ?, use_global_icds = ?, invert_cd_status = ?, use_global_hl = ?"
                     + ", header_lines = ?, use_global_fl = ?, footer_lines = ?, id = ?"
                     + " WHERE id = ?");
 
@@ -457,8 +457,8 @@ public class SQLiteDB implements DBInterface {
             pstmt.setString(20, device.getHeaderLines());
             pstmt.setBoolean(21, device.isUseGlobalFl());
             pstmt.setString(22, device.getFooterLines());
-            pstmt.setString(24, device.getId());
-            pstmt.setString(25, id);
+            pstmt.setString(23, device.getId());
+            pstmt.setString(24, id);
 
             pstmt.execute();
         } catch (SQLException e) {
@@ -501,6 +501,47 @@ public class SQLiteDB implements DBInterface {
             if (e.getErrorCode() == SQLiteErrorCode.SQLITE_CONSTRAINT.code) {
                 throw new NotUniqueKeyException(e);
             }
+            throw new DBException(e);
+        } finally {
+            closeConnection(connection);
+        }
+    }
+
+    @Override
+    public void defaultDevice(String id) throws DBException {
+        Connection connection = null;
+        try {
+            connection = connect();
+
+            Statement stmt = connection.createStatement();
+            stmt.execute("UPDATE devices SET is_default = 0");
+
+            PreparedStatement pstmt = connection.prepareStatement("UPDATE devices SET is_default = 1 WHERE id = ?");
+            pstmt.setString(1, id);
+
+            pstmt.execute();
+        } catch (SQLException e) {
+            throw new DBException(e);
+        } finally {
+            closeConnection(connection);
+        }
+    }
+
+    @Override
+    public String defaultDevice() throws DBException {
+        Connection connection = null;
+        try {
+            connection = connect();
+            PreparedStatement stmt = connection.prepareStatement("SELECT * FROM devices WHERE is_default = ?");
+            stmt.setBoolean(1, true);
+            ResultSet result = stmt.executeQuery();
+
+            while (result.next()) {
+                return result.getString("id");
+            }
+
+            return null;
+        } catch (SQLException e) {
             throw new DBException(e);
         } finally {
             closeConnection(connection);

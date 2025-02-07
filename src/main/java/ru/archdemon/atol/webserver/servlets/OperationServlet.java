@@ -8,7 +8,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.ParseException;
 import ru.archdemon.atol.webserver.db.DBException;
 import ru.archdemon.atol.webserver.db.DBInstance;
 import ru.archdemon.atol.webserver.entities.Device;
@@ -21,7 +20,7 @@ public class OperationServlet extends HttpServlet {
     private static final Logger logger = LogManager.getLogger(OperationServlet.class);
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
         String deviceId = req.getParameterValues("deviceID")[0];
@@ -94,6 +93,8 @@ public class OperationServlet extends HttpServlet {
 
             fptr.setParam(IFptr.LIBFPTR_PARAM_JSON_DATA, task.toJSONString());
             if (fptr.processJson() == IFptr.LIBFPTR_OK) {
+                resp.setContentType("application/json");
+                resp.setCharacterEncoding("UTF-8");
                 resp.getWriter().write(fptr.getParamString(IFptr.LIBFPTR_PARAM_JSON_DATA));
             } else {
                 resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, fptr.errorDescription());

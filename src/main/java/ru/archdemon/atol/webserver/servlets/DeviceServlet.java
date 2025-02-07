@@ -33,6 +33,8 @@ public class DeviceServlet extends HttpServlet {
         try {
             if (req.getPathInfo() != null) {
                 Device device = DBInstance.db.getDevice(req.getPathInfo().split("/")[1]);
+                resp.setContentType("application/json");
+                resp.setCharacterEncoding("UTF-8");
                 resp.getWriter().write(device.toJson().toJSONString());
             } else {
                 JSONArray response = new JSONArray();
@@ -40,7 +42,8 @@ public class DeviceServlet extends HttpServlet {
                 for (Device device : devices) {
                     response.add(device.toJson());
                 }
-
+                resp.setContentType("application/json");
+                resp.setCharacterEncoding("UTF-8");
                 resp.getWriter().write(response.toJSONString());
             }
         } catch (DBException e) {
@@ -73,6 +76,8 @@ public class DeviceServlet extends HttpServlet {
             DBInstance.db.addDevice(device);
             device = DBInstance.db.getDevice(device.getId());
 
+            resp.setContentType("application/json");
+            resp.setCharacterEncoding("UTF-8");
             resp.getWriter().write(device.toJson().toJSONString());
             resp.setStatus(HttpServletResponse.SC_CREATED);
         } catch (NotUniqueKeyException e) {

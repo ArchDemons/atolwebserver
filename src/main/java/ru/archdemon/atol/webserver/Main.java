@@ -138,7 +138,7 @@ public class Main {
         enableEmbeddedJspSupport(servletContextHandler);
 
         servletContextHandler.addServlet(UtilServlet.class, "/api/v2/utils/*");
-        servletContextHandler.addServlet(UtilServlet.class, "/api/v2/operations/*");
+        servletContextHandler.addServlet(OperationServlet.class, "/api/v2/operations/*");
         servletContextHandler.addServlet(ServerInfoServlet.class, "/api/v2/serverInfo");
         servletContextHandler.addServlet(DeviceServlet.class, "/api/v2/devices");
         servletContextHandler.addServlet(DeviceServlet.class, "/api/v2/devices/*");
@@ -146,6 +146,9 @@ public class Main {
         servletContextHandler.addServlet(JsonTaskServlet.class, "/api/v2/requests/*");
         servletContextHandler.addServlet(RequestsQueueStatusServlet.class, "/api/v2/getRequestsQueueStatus");
         servletContextHandler.addServlet(SettingServlet.class, "/api/v2/settings");
+        servletContextHandler.addServlet(DeviceActivateServlet.class, "/api/v2/activateDevice");
+        servletContextHandler.addServlet(DeviceDeactivateServlet.class, "/api/v2/deactivateDevice");
+        servletContextHandler.addServlet(DeviceDefaultServlet.class, "/api/v2/setDefaultDevice");
         servletContextHandler.addFilter(filterHolder, "/*", null);
 
         ServletHolder holderDefault = new ServletHolder("default", DefaultServlet.class);

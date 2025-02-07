@@ -28,8 +28,9 @@ public class SettingServlet extends HttpServlet {
 
         try {
             Setting setting = DBInstance.db.getSetting();
+            resp.setContentType("application/json");
+            resp.setCharacterEncoding("UTF-8");
             resp.getWriter().write(setting.toJson().toJSONString());
-
         } catch (DBException e) {
             logger.error(e.getMessage(), e);
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());

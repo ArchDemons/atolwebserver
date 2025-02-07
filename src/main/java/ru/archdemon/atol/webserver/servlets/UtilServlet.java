@@ -68,6 +68,8 @@ public class UtilServlet extends HttpServlet {
                     result.put("name", "АТОЛ 22Ф №1");
                     result.put("otherSettings", other);
 
+                    resp.setContentType("application/json");
+                    resp.setCharacterEncoding("UTF-8");
                     resp.getWriter().write(result.toJSONString());
                     break;
                 case "mapping":
@@ -79,6 +81,8 @@ public class UtilServlet extends HttpServlet {
                     response.put("port", getDeviceMapping(fptr, "Port"));
                     response.put("usbDevice", getDeviceMapping(fptr, "UsbDevicePath"));
 
+                    resp.setContentType("application/json");
+                    resp.setCharacterEncoding("UTF-8");
                     resp.getWriter().write(response.toJSONString());
                     break;
                 default:

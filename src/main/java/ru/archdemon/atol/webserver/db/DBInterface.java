@@ -40,6 +40,10 @@ public interface DBInterface {
 
     void deleteDevice(String id) throws DBException;
 
+    void defaultDevice(String id) throws DBException;
+
+    String defaultDevice() throws DBException;
+
     List<Device> getDevices() throws DBException;
 
     Device getDevice(String id) throws DBException, NotFoundException;
