@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import ru.archdemon.atol.webserver.Utils;
 import ru.archdemon.atol.webserver.db.DBException;
 import ru.archdemon.atol.webserver.db.DBInstance;
 import ru.archdemon.atol.webserver.db.NotFoundException;
@@ -20,7 +21,7 @@ public class DeviceDeactivateServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        String deviceId = req.getParameterValues("deviceID")[0];
+        String deviceId = req.getParameter("deviceID");
         try {
             Device device = DBInstance.db.getDevice(deviceId);
             device.setActive(false);

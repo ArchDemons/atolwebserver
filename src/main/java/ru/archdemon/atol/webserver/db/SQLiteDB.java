@@ -598,6 +598,15 @@ public class SQLiteDB implements DBInterface {
         Connection connection = null;
         try {
             connection = connect();
+
+            if (id == null) {
+                Statement stmt = connection.createStatement();
+                ResultSet result = stmt.executeQuery("SELECT id FROM devices WHERE is_default = 1");
+                while (result.next()) {
+                    id = result.getString("id");
+                }
+            }
+
             PreparedStatement stmt = connection.prepareStatement("SELECT * FROM devices WHERE id = ?");
             stmt.setString(1, id);
 

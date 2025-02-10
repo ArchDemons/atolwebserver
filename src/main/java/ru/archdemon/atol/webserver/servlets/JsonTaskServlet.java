@@ -85,7 +85,7 @@ public class JsonTaskServlet extends HttpServlet {
             return;
         }
 
-        String deviceId = req.getParameterValues("deviceID")[0];
+        String deviceId = req.getParameter("deviceID");
 
         JSONObject json;
         String body = req.getReader().lines().collect(Collectors.joining(System.lineSeparator()));

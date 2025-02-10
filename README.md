@@ -2,10 +2,15 @@
 
 ## Настройки
 
+### Файл проекта `application.properties`:
 ```
-settings.file # расположение файла 'settings.json'
-db.directory # расположение файла БД 'web.s3db'
-log.directory # расположение файла журнала 'web.log'
+web.port # порт сервера
+```
+
+### Переменные jvm:
+```
+db.directory # расположение каталога БД 'web.s3db'
+log.directory # расположение каталога журналов 'web.log'
 ```
 
 ## Пример запуска

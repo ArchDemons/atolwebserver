@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONObject;
+import ru.archdemon.atol.webserver.Utils;
 import ru.archdemon.atol.webserver.db.DBException;
 import ru.archdemon.atol.webserver.db.DBInstance;
 import ru.archdemon.atol.webserver.entities.BlockRecord;
@@ -23,7 +24,7 @@ public class RequestsQueueStatusServlet extends HttpServlet {
 
         logger.info(String.format("%s %s", req.getMethod(), req.getRequestURI()));
 
-        String deviceId = req.getParameterValues("deviceID")[0];
+        String deviceId = req.getParameter("deviceID");
 
         try {
             RequestsQueueStatus stat = DBInstance.db.getTasksStat(deviceId);
