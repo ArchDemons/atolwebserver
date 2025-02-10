@@ -24,16 +24,15 @@ public class OperationServlet extends HttpServlet {
             throws ServletException, IOException {
 
         String deviceId = req.getParameterValues("deviceID")[0];
+        boolean needClose = false;
+        IFptr fptr = null;
 
         try {
             String command = req.getPathInfo().split("/")[1];
-
             Device device = DBInstance.db.getDevice(deviceId);
-            IFptr fptr;
-            boolean needClose = false;
-            if (DriverWorker.FPTRS.containsKey(device)) {
-                fptr = DriverWorker.FPTRS.get(device);
-            } else {
+
+            fptr = DriverWorker.getFptr(device);
+            if (fptr == null) {
                 fptr = new Fptr();
                 needClose = true;
                 fptr.setSettings(device.getSettings());
@@ -99,14 +98,15 @@ public class OperationServlet extends HttpServlet {
             } else {
                 resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, fptr.errorDescription());
             }
-            if (needClose) {
-                fptr.close();
-            }
         } catch (ArrayIndexOutOfBoundsException e) {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
         } catch (DBException e) {
             logger.error(e.getMessage(), e);
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+        } finally {
+            if (fptr != null && fptr.isOpened() && needClose) {
+                fptr.close();
+            }
         }
     }
 

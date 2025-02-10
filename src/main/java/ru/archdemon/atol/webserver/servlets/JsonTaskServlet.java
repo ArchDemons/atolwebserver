@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -87,7 +88,7 @@ public class JsonTaskServlet extends HttpServlet {
         String deviceId = req.getParameterValues("deviceID")[0];
 
         JSONObject json;
-        String body = Utils.readFromReader(new BufferedReader(new InputStreamReader(req.getInputStream(), StandardCharsets.UTF_8)));
+        String body = req.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
         try {
             json = (JSONObject) JSONValue.parseWithException(body);
             if (!json.containsKey("uuid") || !json.containsKey("request")) {

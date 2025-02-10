@@ -29,3 +29,13 @@ jobs:
       with:
         path: dist
         retention-days: 1
+
+    - name: Deploy release
+      uses: marvinpinto/action-automatic-releases@latest
+      if: github.ref_name == 'main'
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "latest"
+        prerelease: true
+        title: "Development Build"
+        files: dist/*

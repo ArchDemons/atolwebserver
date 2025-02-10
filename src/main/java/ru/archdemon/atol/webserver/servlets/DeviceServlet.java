@@ -1,10 +1,8 @@
 package ru.archdemon.atol.webserver.servlets;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -15,12 +13,12 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
-import ru.archdemon.atol.webserver.Utils;
 import ru.archdemon.atol.webserver.db.DBException;
 import ru.archdemon.atol.webserver.db.DBInstance;
 import ru.archdemon.atol.webserver.db.NotFoundException;
 import ru.archdemon.atol.webserver.db.NotUniqueKeyException;
 import ru.archdemon.atol.webserver.entities.Device;
+import ru.archdemon.atol.webserver.workers.DriverWorker;
 
 public class DeviceServlet extends HttpServlet {
 
@@ -46,6 +44,8 @@ public class DeviceServlet extends HttpServlet {
                 resp.setCharacterEncoding("UTF-8");
                 resp.getWriter().write(response.toJSONString());
             }
+        } catch (NotFoundException e) {
+            resp.sendError(HttpServletResponse.SC_NOT_FOUND, e.getMessage());
         } catch (DBException e) {
             logger.error(e.getMessage(), e);
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
@@ -57,7 +57,7 @@ public class DeviceServlet extends HttpServlet {
             throws ServletException, IOException {
 
         JSONObject json;
-        String body = Utils.readFromReader(new BufferedReader(new InputStreamReader(req.getInputStream(), StandardCharsets.UTF_8)));
+        String body = req.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
         try {
             json = (JSONObject) JSONValue.parseWithException(body);
             if (!json.containsKey("id")) {
@@ -96,6 +96,7 @@ public class DeviceServlet extends HttpServlet {
         try {
             Device device = DBInstance.db.getDevice(req.getPathInfo().split("/")[1]);
             DBInstance.db.deleteDevice(device.getId());
+            DriverWorker.removeFptr(device);
         } catch (ArrayIndexOutOfBoundsException e) {
             logger.error(e.getMessage(), e);
             resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "No deviceID");
@@ -112,7 +113,7 @@ public class DeviceServlet extends HttpServlet {
     protected void doPut(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        String body = Utils.readFromReader(new BufferedReader(new InputStreamReader(req.getInputStream(), StandardCharsets.UTF_8)));
+        String body = req.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
 
         try {
             JSONObject json = (JSONObject) JSONValue.parseWithException(body);
@@ -160,7 +161,7 @@ public class DeviceServlet extends HttpServlet {
             resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "No deviceID");
         } catch (NotFoundException e) {
             logger.error(e.getMessage(), e);
-            resp.sendError(HttpServletResponse.SC_NOT_FOUND, "No device found");
+            resp.sendError(HttpServletResponse.SC_NOT_FOUND, e.getMessage());
         } catch (DBException e) {
             logger.error(e.getMessage(), e);
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());

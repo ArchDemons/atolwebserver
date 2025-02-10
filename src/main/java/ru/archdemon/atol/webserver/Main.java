@@ -1,21 +1,14 @@
 package ru.archdemon.atol.webserver;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.Properties;
-import javax.servlet.ServletException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tomcat.JarScanner;
-import org.apache.tomcat.util.scan.StandardJarScanner;
 import org.eclipse.jetty.annotations.AnnotationConfiguration;
-import org.eclipse.jetty.apache.jsp.JettyJasperInitializer;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -25,10 +18,8 @@ import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
-import org.eclipse.jetty.util.component.AbstractLifeCycle;
 import org.eclipse.jetty.webapp.Configuration;
 import org.eclipse.jetty.webapp.JettyWebXmlConfiguration;
-import org.json.simple.JSONObject;
 import ru.archdemon.atol.webserver.db.DBInstance;
 import ru.archdemon.atol.webserver.servlets.*;
 import ru.archdemon.atol.webserver.workers.DriverWorker;
@@ -39,31 +30,6 @@ public class Main {
     private static final Logger logger = LogManager.getLogger(Main.class);
     private static DriverWorker driverWorker;
     private static Server server;
-
-    public static class JspStarter extends AbstractLifeCycle
-            implements ServletContextHandler.ServletContainerInitializerCaller {
-
-        JettyJasperInitializer sci;
-        ServletContextHandler context;
-
-        public JspStarter(ServletContextHandler context) throws IOException {
-            this.sci = new JettyJasperInitializer();
-            this.context = context;
-            this.context.setAttribute(JarScanner.class.getName(), new StandardJarScanner());
-        }
-
-        @Override
-        protected void doStart() throws ServletException, Exception {
-            ClassLoader old = Thread.currentThread().getContextClassLoader();
-            Thread.currentThread().setContextClassLoader(this.context.getClassLoader());
-            try {
-                this.sci.onStartup(null, this.context.getServletContext());
-                super.doStart();
-            } finally {
-                Thread.currentThread().setContextClassLoader(old);
-            }
-        }
-    }
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
@@ -135,8 +101,6 @@ public class Main {
         servletContextHandler.setContextPath("/");
         servletContextHandler.setResourceBase(baseUri.toASCIIString());
 
-        enableEmbeddedJspSupport(servletContextHandler);
-
         servletContextHandler.addServlet(UtilServlet.class, "/api/v2/utils/*");
         servletContextHandler.addServlet(OperationServlet.class, "/api/v2/operations/*");
         servletContextHandler.addServlet(ServerInfoServlet.class, "/api/v2/serverInfo");
@@ -169,22 +133,6 @@ public class Main {
         logger.info("OK");
 
         server.join();
-    }
-
-    private static void enableEmbeddedJspSupport(ServletContextHandler servletContextHandler) throws IOException {
-        File tempDir = new File(System.getProperty("java.io.tmpdir"));
-        File scratchDir = new File(tempDir.toString(), "atol-web-server-tmp");
-
-        if (!scratchDir.exists() && !scratchDir.mkdirs()) {
-            throw new IOException("Unable to create scratch directory: " + scratchDir);
-        }
-
-        servletContextHandler.setAttribute("javax.servlet.context.tempdir", scratchDir);
-
-        ClassLoader jspClassLoader = new URLClassLoader(new URL[0], Main.class.getClassLoader());
-        servletContextHandler.setClassLoader(jspClassLoader);
-
-        servletContextHandler.addBean(new JspStarter(servletContextHandler));
     }
 
     private static URI getWebRootResourceUri() throws FileNotFoundException, URISyntaxException {

@@ -1,36 +1,6 @@
 package ru.archdemon.atol.webserver;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-
 public class Utils {
-
-    public static String readFromReader(BufferedReader reader) {
-        StringBuilder jb = new StringBuilder();
-
-        boolean isBOM = false;
-        try {
-            reader.mark(1);
-            if (reader.read() == 65279) {
-                isBOM = true;
-            }
-            if (!isBOM) {
-                reader.reset();
-            }
-            reader.mark(0);
-            String line;
-            while ((line = reader.readLine()) != null) {
-                jb.append(line).append("\n");
-            }
-        } catch (IOException exception) {
-        }
-
-        String result = jb.toString();
-        if (result.charAt(0) == '﻿') {
-            result = result.substring(1);
-        }
-        return result;
-    }
 
     public static String getStatusString(int status) {
         switch (status) {
